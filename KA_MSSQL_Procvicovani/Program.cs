@@ -1,11 +1,14 @@
 ﻿using KA_MSSQL_Procvicovani;
 using Microsoft.Data.SqlClient;
-
-string ConnectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=""C:\Users\EDM_PC\Documents\Programy\VS\KA_MSSQL_Procvicovani\KA_MSSQL_Procvicovani\KA_MSSQL_Procvicovani\hry.mdf"";Integrated Security=True;Connect Timeout=30";
+// Ve složce je k dispozici použitá databáze hry.mdf
+// Vaše cesta -> *****
+string ConnectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=*****;Integrated Security=True;Connect Timeout=30;Encrypt=True";
 
 while (true)
 {
-    char input;
+    // Menu
+    // Char ipnut použivám proto, aby input byl hned zaregistrován (Idealnější na práci s čísly by byl Int)
+    char input; 
     Console.Clear();
     Console.WriteLine("1. Insert");
     Console.WriteLine("2. Select");
@@ -46,7 +49,7 @@ while (true)
             break;
     }  
 } 
-void Insert() 
+void Insert() // Přidání hodnot do tabulek
 {
     SqlConnection connection = new SqlConnection(ConnectionString);
     Console.WriteLine("Tabulky:\n1. Games\n2. Game Studio");
@@ -55,11 +58,12 @@ void Insert()
     char input;
     do
     {
-        Console.Write("Vyberte tabulku na INSERT (1, 2)");
+        Console.Write("Vyberte tabulku na INSERT (1, 2): ");
         input = Console.ReadKey().KeyChar;
         Console.Clear();
-        if (input == '1')
+        if (input == '1') // Tabulka Games
         {
+            // Použití třídy Games pro zadávání
             Games game = new Games();
             Console.Write("Název hry: ");
             game.Title = Console.ReadLine();
@@ -72,11 +76,12 @@ void Insert()
             Console.WriteLine();
 
             connection.Open();
-            cmd = new SqlCommand("select Id, Name from games", connection);
+            cmd = new SqlCommand("select Id, Name from gamestudio", connection);
             SqlDataReader read = cmd.ExecuteReader();
             Console.WriteLine("Existující studia:");
             while (read.Read())
             {
+                // Aby uživatel viděl, ke kterému ID přiřadí hru
                 Console.WriteLine($"{read["Id"]}. {read["Name"]}");
             }
             read.Close();
@@ -92,11 +97,12 @@ void Insert()
             cmd.Parameters.AddWithValue("@Rating", game.Rating);
             cmd.Parameters.AddWithValue("@Id_Studio", game.Id_Studio);
             cmd.ExecuteNonQuery();
-            Vypis(new SqlCommand("select * from gamestudio", connection));
+            Vypis(new SqlCommand("select * from games", connection)); // Zobrazení tabulky
             connection.Close();
         }
-        else if (input == '2')
+        else if (input == '2') // Tabulka Game Studio
         {
+            // Použití třídy Studio pro zadávání
             Studio studio = new Studio();
             Console.Write("Napište název studia: ");
             studio.Name = Console.ReadLine();
@@ -115,7 +121,7 @@ void Insert()
             cmd.Parameters.AddWithValue("@Employees", studio.Employees);
             cmd.Parameters.AddWithValue("@Reputation", studio.Reputation);
             cmd.ExecuteNonQuery();
-            Vypis(new SqlCommand("select * from games", connection));
+            Vypis(new SqlCommand("select * from gamestudio", connection)); // Zobrazení tabulky
             connection.Close();
         }
         else
@@ -126,7 +132,7 @@ void Insert()
     } 
     while (input != '1' && input != '2');
 }
-void Select() 
+void Select()   // Zobrazení záznamů // Uživatel si píše vlastní SELECT
 {
     SqlConnection connection = new SqlConnection(ConnectionString);
     Console.WriteLine("Tabulky:\n1. Games\n2. Game Studio");
@@ -136,13 +142,13 @@ void Select()
     {
         Console.WriteLine("Napiště váš dotaz: ");
         query = Console.ReadLine().ToLower();
-        if (query.Contains("select"))
+        if (query.Contains("select")) // Aby uživatel nepsal jiný dotaz než SELECT
         {
             cmd = new SqlCommand(query, connection);
             break;
         }
         else 
-            Console.WriteLine("Tento dotaz neobsahuje SELECT!");
+            Console.WriteLine("Tento dotaz neobsahuje SELECT!"); 
     }
     connection.Open();
     Vypis(cmd);
@@ -150,7 +156,7 @@ void Select()
 
     Console.ReadLine();
 }
-void Update()
+void Update() // Úprava záznamů
 {
     SqlConnection connection = new SqlConnection(ConnectionString);
     Console.WriteLine("Tabulky:\n1. Games\n2. Game Studio");
@@ -169,7 +175,7 @@ void Update()
             Vypis(cmd);
             connection.Close();
             Console.WriteLine("");
-            Console.Write("Podle ID vyberte sloupec na UPDATE: ");
+            Console.Write("Podle ID vyberte sloupec na UPDATE: "); // Hodnoty se upravujou podle ID
             char id = Console.ReadKey().KeyChar;
             Console.WriteLine();
 
@@ -241,7 +247,7 @@ void Update()
     }
     while (input != '1' && input != '2');
 }
-void Sort() 
+void Sort() // Seřazení záznamů podle sloupce
 {
     SqlConnection connection = new SqlConnection(ConnectionString);
     Console.WriteLine("Tabulky:\n1. Games\n2. Game Studio");
@@ -300,7 +306,7 @@ void Delete()
             connection.Open();
             Vypis(new SqlCommand("select * from games", connection));
             connection.Close();
-            Console.Write("ID řádku který chcete smazat: ");
+            Console.Write("ID řádku který chcete smazat: "); // Opět mazání podle ID
             int id = int.Parse(Console.ReadLine());
             Console.Write("OPRAVDU CHCETE SMAZAT ZÁZNAM? (Y/N) ");
             connection.Open();
@@ -358,12 +364,13 @@ void Aggregate ()
             Vypis(new SqlCommand("select * from games", connection));
             connection.Close();
             connection.Open();
+            // Počet záznamů v tabulce
             Console.WriteLine("Počet záznamů: " + Convert.ToInt32(new SqlCommand("select count(*) from games", connection).ExecuteScalar()));
             while (true)
             {
                 Console.Write("Vyberte sloupec: ");
                 string column = Console.ReadLine().ToLower();
-                try
+                try // Pokud to hodí error (Např. textový řetězec nemůže použít funkci)
                 {
                     Console.WriteLine("Maximální hodnota: " + Convert.ToInt32(new SqlCommand($"select max({column}) from games", connection).ExecuteScalar()));
                     Console.WriteLine("Minimální hodnota: " + Convert.ToInt32(new SqlCommand($"select min({column}) from games", connection).ExecuteScalar()));
@@ -411,12 +418,12 @@ void Aggregate ()
 }
 void Vypis(SqlCommand cmd)
 {
-    const int space = 18;
+    const int space = 18; // Pro zarovnání
     SqlDataReader read = cmd.ExecuteReader();
     string text = "";
 
     string header = "";
-    for (int i = 0; i < read.FieldCount; i++)
+    for (int i = 0; i < read.FieldCount; i++) // Vypsání názvů sloupců
     {
         if (read.GetName(i) == "Id")
             header += $"| {read.GetName(i),-4}";
@@ -425,12 +432,12 @@ void Vypis(SqlCommand cmd)
     }
     text += header + "\n";
 
-    text += new string('¯', header.Length) + "\n";
+    text += new string('¯', header.Length) + "\n"; // Podtržení hlavičky
 
     while (read.Read())
     {
         string row = "";
-        for (int i = 0; i < read.FieldCount; i++)
+        for (int i = 0; i < read.FieldCount; i++) // Vypsání jednotlivých záznamů
         {
             string value = read[i].ToString();
             if (read.GetName(i) == "Id")
@@ -442,5 +449,5 @@ void Vypis(SqlCommand cmd)
     }
 
     Console.Clear();
-    Console.WriteLine(text);
+    Console.WriteLine(text); // Celá tabulka
 }
